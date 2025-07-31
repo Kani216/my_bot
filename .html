@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customer Helping Bot</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom animations */
+    @keyframes slideIn {
+      0% { transform: translateY(20px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    @keyframes typingDots {
+      0% { content: '.'; }
+      33% { content: '..'; }
+      66% { content: '...'; }
+      100% { content: '.'; }
+    }
+    .message-bubble {
+      animation: slideIn 0.4s ease-out;
+    }
+    .bot-thinking::after {
+      content: '.';
+      display: inline-block;
+      width: 1.5em;
+      text-align: left;
+      animation: typingDots 1.2s steps(4, end) infinite;
+    }
+    .chat-container {
+      animation: fadeIn 0.8s ease-in;
+    }
+    .send-button:hover {
+      animation: pulse 0.3s ease-in-out;
+    }
+    .chat-box::-webkit-scrollbar {
+      width: 8px;
+    }
+    .chat-box::-webkit-scrollbar-thumb {
+      background: #a1a1aa;
+      border-radius: 4px;
+    }
+    .chat-box::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+    .emoji-highlight {
+      font-size: 1.2em;
+      margin-right: 4px;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex items-center justify-center font-sans">
+  <div class="chat-container max-w-md w-full bg-white rounded-3xl shadow-xl p-6 m-4">
+    <div class="flex items-center mb-4">
+      <img src="C:\Users\91807\Downloads\download (26).jpg" alt="Bot Icon" class="w-12 h-12 rounded-full mr-3">
+      <div>
+        <h1 class="text-xl font-semibold text-gray-800">Customer Helping Bot</h1>
+        <p class="text-sm text-gray-500">Manage contacts with ease</p>
+      </div>
+    </div>
+    <div id="chatBox" class="chat-box h-96 overflow-y-auto mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+      <div class="message-bubble p-3 my-2 rounded-lg max-w-xs bg-gray-200 text-gray-800 mr-auto">
+        Welcome to the Customer Helping Bot! Try commands like <strong>'add contact'</strong>, <strong>'list contacts'</strong>, <strong>'list contact details'</strong>, <strong>'get details &lt;name or email&gt;'</strong>, <strong>'update contact &lt;identifier&gt;'</strong>, <strong>'delete contact &lt;email&gt;'</strong>, or <strong>'reset'</strong>.
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <input id="userInput" type="text" placeholder="Type a command..." class="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" autocomplete="off">
+      <button id="sendButton" class="send-button bg-indigo-600 text-white px-4 py-3 rounded-lg hover:bg-indigo-700 transition-colors flex items-center">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+        </svg>
+        Send
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById('chatBox');
+    const userInput = document.getElementById('userInput');
+    const sendButton = document.getElementById('sendButton');
+
+    async function sendMessageToBackend(message) {
+      try {
+        const response = await fetch('http://localhost:5000/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        const data = await response.json();
+        return data.response;
+      } catch (error) {
+        console.error('API Error:', error);
+        return '⚠️ Error: Could not connect to the server.';
+      }
+    }
+
+    function appendMessage(sender, text) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message-bubble p-3 my-2 rounded-lg max-w-xs ${
+        sender === 'user' ? 'bg-indigo-500 text-white ml-auto' : 'bg-gray-200 text-gray-800 mr-auto'
+      }`;
+      // Format message: handle newlines and highlight emojis
+      messageDiv.innerHTML = text
+        .replace(/\n/g, '<br>')
+        .replace(/([❗✅🔍🧾📇📭🗑️🔄])/g, '<span class="emoji-highlight">$1</span>')
+        .replace(/'(add contact|list contacts|list contact details|get details|update contact|delete contact|reset)'/g, '<strong>$1</strong>');
+      chatBox.appendChild(messageDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function showTypingIndicator() {
+      const typingDiv = document.createElement('div');
+      typingDiv.className = 'message-bubble bot-thinking p-3 my-2 rounded-lg max-w-xs bg-gray-200 text-gray-800 mr-auto';
+      typingDiv.textContent = 'Bot is typing';
+      chatBox.appendChild(typingDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return typingDiv;
+    }
+
+    async function handleSendMessage() {
+      const message = userInput.value.trim();
+      if (!message) return;
+
+      appendMessage('user', message);
+      userInput.value = '';
+      const typingDiv = showTypingIndicator();
+
+      const response = await sendMessageToBackend(message);
+      typingDiv.remove();
+      appendMessage('bot', response);
+    }
+
+    sendButton.addEventListener('click', handleSendMessage);
+    userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleSendMessage();
+    });
+
+    // Initial greeting
+    appendMessage('bot', 'Welcome to the Customer Helping Bot! Try commands like <strong>"add contact"</strong>, <strong>"list contacts"</strong>, <strong>"list contact details"</strong>, <strong>"get details &lt;name or email&gt;"</strong>, <strong>"update contact &lt;identifier&gt;"</strong>, <strong>"delete contact &lt;email&gt;"</strong>, or <strong>"reset"</strong>.');
+  </script>
+</body>
+</html>
