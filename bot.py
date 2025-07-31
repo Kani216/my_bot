@@ -5,9 +5,9 @@ import uuid
 import re
 
 # Hardcoded API keys
-GEMINI_API_KEY = 'AIzaSyBaGu4wTsNODCMz1lcvAAGi_GQFStsntiU'
-FRESHSALES_API_KEY = '2Wa6pZBwZmAzgIVeeflv5A'
-FRESHSALES_DOMAIN = 'kambaa1.myfreshworks.com'
+GEMINI_API_KEY = ''
+FRESHSALES_API_KEY = ''
+FRESHSALES_DOMAIN = ''
 FRESHSALES_BASE_URL = f'https://{FRESHSALES_DOMAIN}/crm/sales/api'
 
 # Configure Gemini API
